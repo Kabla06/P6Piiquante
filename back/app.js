@@ -1,14 +1,18 @@
-// importe Express pour pouvoir l'utiliser dans notre application
 const express = require("express");
 const mongoose = require("mongoose");
-
 const app = express();
 
-mongoose.connect('mongodb+srv://Hugopinpio:Ub9zKP0DY8YKD1fa@cluster0.byahfys.mongodb.net/?retryWrites=true&w=majority',
-  { useNewUrlParser: true,
-    useUnifiedTopology: true })
-  .then(() => console.log('Connexion à MongoDB réussie !'))
-  .catch(() => console.log('Connexion à MongoDB échouée !'));
+const sauce = require("./models/sauces");
+
+app.use(express.json());
+
+mongoose
+  .connect(
+    "mongodb+srv://Hugopinpio:Ub9zKP0DY8YKD1fa@cluster0.byahfys.mongodb.net/?retryWrites=true&w=majority",
+    { useNewUrlParser: true, useUnifiedTopology: true }
+  )
+  .then(() => console.log("Connexion à MongoDB réussie !"))
+  .catch(() => console.log("Connexion à MongoDB échouée !"));
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -23,23 +27,51 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use((req, res, next) => {
-  console.log("Requête reçue");
-  next();
+app.use("/api/sauces", (req, res, next) => {
+  const stuff = [
+    {
+      _id: "oeihfzeoi",
+      userId: "qsomihvqios",
+      name: "Mon premier objet",
+      manufacturer: "Ok mon gars",
+      description: "Les infos de mon premier objet",
+      mainPepper: "TMTC",
+      imageUrl:
+        "https://cdn.pixabay.com/photo/2019/06/11/18/56/camera-4267692_1280.jpg",
+      heat: 3,
+      likes: 4,
+      dislikes: 1,
+      usersLiked: ["Coucou"],
+      usersDisliked: ["Cucu"],
+    },
+    {
+      _id: "oeihfzeomoihi",
+      userId: "qsomihvqios",
+      name: "Mon deuxième objet",
+      manufacturer: "Ok mon gars",
+      description: "Les infos de mon deuxième objet",
+      mainPepper: "TMTC",
+      imageUrl:
+        "https://cdn.pixabay.com/photo/2019/06/11/18/56/camera-4267692_1280.jpg",
+      heat: 3,
+      likes: 2,
+      dislikes: 1,
+      usersLiked: ["Coucou"],
+      usersDisliked: ["Cucu"],
+    },
+  ];
+  res.status(200).json(stuff);
 });
 
-app.use((req, res, next) => {
-  res.status(201);
-  next();
-});
-
-app.use((req, res, next) => {
-  res.json({ message: "Votre requête a bien été reçue !" });
-  next();
-});
-
-app.use((req, res) => {
-  console.log("Réponse envoyée.");
+app.use("/api/sauces", (req, res, next) => {
+  delete req.body.userId;
+  const truc = new truc({
+    ...req.body,
+  });
+  truc
+    .save()
+    .then(() => res.status(201).json({ message: "Objet enregistré" }))
+    .catch((error) => res.status(400).json({ error }));
 });
 
 module.exports = app;
