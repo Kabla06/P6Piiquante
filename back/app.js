@@ -1,8 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const app = express();
+const app = express(); //body-parser = permet d'accéder au corps des requêtes
 
 const sauce = require("./models/sauces");
+const userRoutes = require("./routes/user");
 
 app.use(express.json());
 
@@ -73,5 +74,7 @@ app.use("/api/sauces", (req, res, next) => {
     .then(() => res.status(201).json({ message: "Objet enregistré" }))
     .catch((error) => res.status(400).json({ error }));
 });
+
+app.use("/api/auth", userRoutes);
 
 module.exports = app;
