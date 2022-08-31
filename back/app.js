@@ -18,6 +18,7 @@ mongoose
 // Middleware permettant à l'utilisateur de communiquer avec l'API depuis n'importe où,
 // Respecte une liste de requêtes "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS"
 app.use((req, res, next) => {
+  console.log(req.body);
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Headers",
