@@ -1,11 +1,12 @@
 //Dit que l'on a besoin du modèle, du schéma de données "./models/sauces"
 const app = require("../app");
 const Sauce = require("../models/sauces");
+const fs = require("fs");
 
 // createSauce permet au site de créer une sauce à partir du modèle plus haut
 // Ici, on l'exporte pour pouvoir l'utiliser dans ./routes/sauces.js
 exports.createSauce = (req, res, next) => {
-  const parseSauce = JSON.parse(req.body.Sauce);
+  const parseSauce = JSON.parse(req.body.sauce);
   delete parseSauce._id;
   delete parseSauce._userId;
   // Ici, on crée une nouvelle instance de Sauce qu'on appelle sauce (sans majuscule)
@@ -15,12 +16,11 @@ exports.createSauce = (req, res, next) => {
     // Donc le corps de la requête est ici le modèle que l'on va chercher en haut,
     // *nouvelle instance de Sauce = sauce*
     ...parseSauce,
-    userId: res.auth.userId,
+    userId: req.auth.userId,
     imageUrl: `${req.protocol}://${req.get("host")}/images/${
       req.file.filename
     }`,
   });
-  // console.log(req);
   // .save() va enregistrer cette instance dans la base, renvoie une promesse donc .then() + .catch()
   sauce
     .save()
@@ -31,8 +31,32 @@ exports.createSauce = (req, res, next) => {
 };
 
 exports.updateOne = (req, res, next) => {
-  Sauce.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
-    .then(() => res.status(200).json({ message: "Objet modifié !" }))
+  const sauceObjet = req.file
+    ? {
+        ...JSON.parse(req.body.sauce),
+        imageUrl: `${req.protocol}://${req.get("host")}/images/${
+          req.file.filename
+        }`,
+      }
+    : { ...req.body };
+  delete sauceObjet._userId;
+
+  Sauce.findOne({ _id: req.params.id })
+    // On récupère l'objet sauce et l'userId qui lui correspond en bdd,
+    // Si ça ne correspond pas avec le token (auth) = message d'erreur
+    .then((sauce) => {
+      if (sauce.userId != req.auth.userId) {
+        res.status(401).json({ message: "Non autorisé" });
+      } else {
+        // Si c'est bon, alors on update l'objet
+        Sauce.updateOne(
+          { _id: req.params.id },
+          { ...sauceObjet, _id: req.params.id }
+        )
+          .then(() => res.status(200).json({ message: "Objet modifié" }))
+          .catch((error) => res.status(401).json({ error }));
+      }
+    })
     .catch((error) => res.status(400).json({ error }));
 };
 
@@ -43,9 +67,20 @@ exports.getOneSauce = (req, res, next) => {
 };
 
 exports.deleteSauce = (req, res, next) => {
-  Sauce.deleteOne({ _id: req.params.id })
-    .then(() => res.status(200).json({ message: "Objet supprimé !" }))
-    .catch((error) => res.status(400).json({ error }));
+  Sauce.findOne({ _id: req.params.id }).then((sauceDelete) => {
+    if (sauceDelete.userId != req.auth.userId) {
+      res.status(401).json({ message: "Non autorisé" });
+    } else {
+      const filename = sauceDelete.imageUrl.split("/images/")[1];
+      fs.unlink(`images/${filename}`, () => {
+        Sauce.deleteOne({ _id: req.params.id })
+          .then(() => {
+            res.status(200).json({ message: "Objet supprimé" });
+          })
+          .catch((error) => res.status(401).json({ error }));
+      });
+    }
+  });
 };
 
 // Fonction getSauces permettant à l'utilisateur d'afficher les différentes sauces en allant les chercher
@@ -58,9 +93,61 @@ exports.getSauces = (req, res, next) => {
     .catch((error) => res.status(400).json({ error }));
 };
 
-// Ce qui a été écrit ici aurait très bien pu aller dans ./routes/sauces
-// Par soucis de clarté et de praticité nous écrivons nos CONTROLLERS ici qu'on appelle ensuite dans ./routes/*
-// Mais un CONTROLLER n'est pas une ROUTE, c'est en fait une fonction qui permet de controller les données
-// On utilise ensuite les CONTROLLERS dans nos routes pour savoir ce que la requête doit aller chercher ou pas
-// en gros, c'est juste une fonction qui a un effet sur les données et dont on se sert dans les routes
-// pour le traitement des requêtes
+exports.likeSauce = (req, res, next) => {
+  const sauceId = req.params.id;
+  const userId = req.body.userId;
+  const like = req.body.like;
+
+  if (like === 1) {
+    Sauce.updateOne(
+      { _id: sauceId },
+      {
+        $inc: { likes: like },
+        $push: { usersLiked: userId },
+      }
+    )
+      .then((sauce) => res.status(200).json({ message: "Vous avez liké" }))
+      .catch((err) => res.status(500).json({ err }));
+  } else if (like === -1) {
+    Sauce.updateOne(
+      { _id: sauceId },
+      {
+        $inc: { dislikes: -1 * like },
+        $push: { usersDisliked: userId },
+      }
+    )
+      .then((sauce) =>
+        res.status(200).json({ message: "Vous avez enlevé votre dislike" })
+      )
+      .catch((err) => res.status(500).json({ err }));
+  } else {
+    Sauce.findOne({ _id: sauceId })
+      .then((sauce) => {
+        if (sauce.usersLiked.includes(userId)) {
+          Sauce.updateOne(
+            { _id: sauceId },
+            { $pull: { usersLiked: userId }, $inc: { likes: -1 } }
+          )
+            .then((sauce) => {
+              res.status(200).json({ message: "Vous avez disliké" });
+            })
+            .catch((err) => res.status(500).json({ err }));
+        } else if (sauce.usersDisliked.includes(userId)) {
+          Sauce.updateOne(
+            { _id: sauceId },
+            {
+              $pull: { usersDisliked: userId },
+              $inc: { dislikes: -1 },
+            }
+          )
+            .then(
+              res
+                .status(200)
+                .json({ message: "Vous avez enlevé votre dislike" })
+            )
+            .catch((err) => res.status(500).json({ err }));
+        }
+      })
+      .catch((err) => res.status(401).json({ err }));
+  }
+};
