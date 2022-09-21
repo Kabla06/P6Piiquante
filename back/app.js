@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const app = express();
 
 app.use(express.json()); //body-parser = permet d'accéder au corps des requêtes
+app.use(express.urlencoded({ extended: true }));
 
 const userRoutes = require("./routes/user");
 const saucesRoutes = require("./routes/sauces");

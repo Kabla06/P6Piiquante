@@ -3,12 +3,29 @@ const app = require("../app");
 const Sauce = require("../models/sauces");
 const fs = require("fs");
 
+// Fonction getSauces permettant à l'utilisateur d'afficher les différentes sauces en allant les chercher
+// dans la base de données avec la méthode .find()
+// On renvoie toujours un code de validation ou d'erreur en format json
+// Ici, pas de 201 mais un 200 car il ne s'agit pas de la création d'un objet mais de la "lecture" de la BDD
+exports.getSauces = (req, res, next) => {
+  Sauce.find()
+    .then((things) => res.status(200).json(things))
+    .catch((error) => res.status(400).json({ error }));
+};
+
+exports.getOneSauce = (req, res, next) => {
+  Sauce.findOne({ _id: req.params.id })
+    .then((things) => res.status(200).json(things))
+    .catch((error) => res.status(404).json({ error }));
+};
+
 // createSauce permet au site de créer une sauce à partir du modèle plus haut
 // Ici, on l'exporte pour pouvoir l'utiliser dans ./routes/sauces.js
 exports.createSauce = (req, res, next) => {
   const parseSauce = JSON.parse(req.body.sauce);
   delete parseSauce._id;
   delete parseSauce._userId;
+  console.log(req.body.sauce);
   // Ici, on crée une nouvelle instance de Sauce qu'on appelle sauce (sans majuscule)
   // Cela correspond en fait à un nouveau modèle modifié par l'utilisateur
   const sauce = new Sauce({
@@ -31,39 +48,43 @@ exports.createSauce = (req, res, next) => {
 };
 
 exports.updateOne = (req, res, next) => {
-  const sauceObjet = req.file
-    ? {
-        ...JSON.parse(req.body.sauce),
-        imageUrl: `${req.protocol}://${req.get("host")}/images/${
-          req.file.filename
-        }`,
-      }
-    : { ...req.body };
-  delete sauceObjet._userId;
-
+  // recherche la sauce correspondant a l'id passé en param
   Sauce.findOne({ _id: req.params.id })
-    // On récupère l'objet sauce et l'userId qui lui correspond en bdd,
-    // Si ça ne correspond pas avec le token (auth) = message d'erreur
     .then((sauce) => {
       if (sauce.userId != req.auth.userId) {
         res.status(401).json({ message: "Non autorisé" });
-      } else {
-        // Si c'est bon, alors on update l'objet
-        Sauce.updateOne(
-          { _id: req.params.id },
-          { ...sauceObjet, _id: req.params.id }
-        )
-          .then(() => res.status(200).json({ message: "Objet modifié" }))
-          .catch((error) => res.status(401).json({ error }));
       }
-    })
-    .catch((error) => res.status(400).json({ error }));
-};
+      // si req.file != null alors on a passé une nouvelle image
+      let sauceObject = null;
+      if (req.file != null) {
+        // ici, on supprime l'ancienne image
+        const filename = sauce.imageUrl.split("/images/")[1];
+        fs.unlink(`images/${filename}`, () => {});
 
-exports.getOneSauce = (req, res, next) => {
-  Sauce.findOne({ _id: req.params.id })
-    .then((things) => res.status(200).json(things))
-    .catch((error) => res.status(404).json({ error }));
+        sauceObject = {
+          ...JSON.parse(req.body.sauce),
+          // front qui décide
+          imageUrl: `${req.protocol}://${req.get("host")}/images/${
+            req.file.filename
+          }`,
+        };
+        console.log(sauceObject);
+      } else {
+        console.log("coucou :)");
+        console.log(req.body);
+        // si on arrive là, on n'a pas passé d'image dans la MaJ
+        sauceObject = req.body;
+        // ce n'est pas du json
+      }
+
+      Sauce.updateOne(
+        { _id: req.params.id },
+        { ...sauceObject, _id: req.params.id }
+      )
+        .then(() => res.status(200).json({ message: "Objet modifié" }))
+        .catch((error) => res.status(401).json({ error }));
+    })
+    .catch();
 };
 
 exports.deleteSauce = (req, res, next) => {
@@ -83,56 +104,64 @@ exports.deleteSauce = (req, res, next) => {
   });
 };
 
-// Fonction getSauces permettant à l'utilisateur d'afficher les différentes sauces en allant les chercher
-// dans la base de données avec la méthode .find()
-// On renvoie toujours un code de validation ou d'erreur en format json
-// Ici, pas de 201 mais un 200 car il ne s'agit pas de la création d'un objet mais de la "lecture" de la BDD
-exports.getSauces = (req, res, next) => {
-  Sauce.find()
-    .then((things) => res.status(200).json(things))
-    .catch((error) => res.status(400).json({ error }));
-};
-
 exports.likeSauce = (req, res, next) => {
   const sauceId = req.params.id;
+  // id d'une sauce dans l'URL
   const userId = req.body.userId;
+  // Récupération de l'userId dans le corps de la requête (middleware auth)
   const like = req.body.like;
+  // création d'une valeur like qu'on peut diminuer ou incrémenter
 
+  // > Quand on met un like
   if (like === 1) {
+    // telle ou telle sauce
     Sauce.updateOne(
+      // _id contenant l'id d'une sauce en particulier
       { _id: sauceId },
       {
-        $inc: { likes: like },
+        // $inc = fonction mongodb pour incrémenter une valeur
+        $inc: { likes: 1 },
+        // $push pour push une valeur dans un tableau (ici, schéma usersLiked = userId pour correspondance)
         $push: { usersLiked: userId },
       }
     )
+      // quand tout se passe bien, on renvoie un 200
       .then((sauce) => res.status(200).json({ message: "Vous avez liké" }))
-      .catch((err) => res.status(500).json({ err }));
-  } else if (like === -1) {
+      // quand il y a une erreur on renvoie un 500
+      .catch((error) => res.status(500).json({ error }));
+  }
+  // > Quand on met un dislike
+  else if (like === -1) {
+    // telle ou telle sauce
     Sauce.updateOne(
       { _id: sauceId },
       {
-        $inc: { dislikes: -1 * like },
+        // pourquoi n'importe quel opérateur fonctionne ici?
+        $inc: { dislikes: 1 },
         $push: { usersDisliked: userId },
       }
     )
-      .then((sauce) =>
-        res.status(200).json({ message: "Vous avez enlevé votre dislike" })
-      )
-      .catch((err) => res.status(500).json({ err }));
-  } else {
+      .then((sauce) => res.status(200).json({ message: "Vous avez disliké" }))
+      .catch((error) => res.status(500).json({ error }));
+  }
+  // > On veut retirer son like
+  else {
     Sauce.findOne({ _id: sauceId })
       .then((sauce) => {
         if (sauce.usersLiked.includes(userId)) {
           Sauce.updateOne(
             { _id: sauceId },
+            // $pull enlève une valeur, ici on enlève un 'likes' en l'incrémentant de -1, correspond avec l'userId
             { $pull: { usersLiked: userId }, $inc: { likes: -1 } }
           )
             .then((sauce) => {
-              res.status(200).json({ message: "Vous avez disliké" });
+              res.status(200).json({ message: "Vous avez enlevé votre like" });
             })
-            .catch((err) => res.status(500).json({ err }));
-        } else if (sauce.usersDisliked.includes(userId)) {
+            .catch((error) => res.status(500).json({ error }));
+        }
+        // .includes() cherche si une valeur se trouve dans un tableau et si elle y est, renvoie true
+        // On cherche ici la valeur userId pour faire la correspondance et si elle est faite, mon else if
+        else if (sauce.usersDisliked.includes(userId)) {
           Sauce.updateOne(
             { _id: sauceId },
             {
@@ -145,9 +174,9 @@ exports.likeSauce = (req, res, next) => {
                 .status(200)
                 .json({ message: "Vous avez enlevé votre dislike" })
             )
-            .catch((err) => res.status(500).json({ err }));
+            .catch((error) => res.status(500).json({ error }));
         }
       })
-      .catch((err) => res.status(401).json({ err }));
+      .catch((error) => res.status(401).json({ error }));
   }
 };
