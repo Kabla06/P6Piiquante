@@ -52,7 +52,7 @@ exports.updateOne = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id })
     .then((sauce) => {
       if (sauce.userId != req.auth.userId) {
-        res.status(401).json({ message: "Non autorisé" });
+        res.status(403).json({ message: "unauthorized request." });
       }
       // si req.file != null alors on a passé une nouvelle image
       let sauceObject = null;
@@ -136,7 +136,6 @@ exports.likeSauce = (req, res, next) => {
     Sauce.updateOne(
       { _id: sauceId },
       {
-        // pourquoi n'importe quel opérateur fonctionne ici?
         $inc: { dislikes: 1 },
         $push: { usersDisliked: userId },
       }
@@ -160,7 +159,8 @@ exports.likeSauce = (req, res, next) => {
             .catch((error) => res.status(500).json({ error }));
         }
         // .includes() cherche si une valeur se trouve dans un tableau et si elle y est, renvoie true
-        // On cherche ici la valeur userId pour faire la correspondance et si elle est faite, mon else if
+        // On cherche ici la valeur userId pour faire la correspondance
+        // > On veut retirer son dislike
         else if (sauce.usersDisliked.includes(userId)) {
           Sauce.updateOne(
             { _id: sauceId },
