@@ -1,29 +1,34 @@
-# HotTakes
+# Piiquante P6 - Openclassrooms
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 13.2.4.
+## Concernant le projet
 
-## Development server
+L'objectif était de développer une API pour un site de notation de sauce.
+Node.js, Express et MongoDB ont été utilisés.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+## Initialiser le projet
 
-## Code scaffolding
+### Cloner le repository
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+`git clone https://github.com/Kabla06/P6Piiquante.git`
 
-## Build
+### Dans le dossier Backend
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+### Installation des dépendences
 
-## Running unit tests
+`npm install`
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+### Mettre en route le serveur Node.js
 
-## Running end-to-end tests
+`nodemon server`
+L'application doit s'exécuter sur le port `3000` (par défaut)
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+### Dans le dossier Frontend
 
-## Further help
+### Installation des dépendences
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+`npm install`
 
-npm run start / nodemon server back
+### Démarrer l'application Angular
+
+`npm run start`
+L'application doit s'exécuter sur `localhost` avec le port `4200` par défaut.

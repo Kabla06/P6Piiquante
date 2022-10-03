@@ -1,10 +1,12 @@
 const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
+const helmet = require("helmet");
 const app = express();
 
 app.use(express.json()); //body-parser = permet d'accéder au corps des requêtes
 app.use(express.urlencoded({ extended: true }));
+
 
 const userRoutes = require("./routes/user");
 const saucesRoutes = require("./routes/sauces");
@@ -21,6 +23,7 @@ mongoose
 // Respecte une liste de requêtes "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS"
 app.use((req, res, next) => {
   console.log(req.body);
+  // comm front to back => api contactable par n'importe quel domaine
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Headers",
@@ -36,5 +39,6 @@ app.use((req, res, next) => {
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/api/auth", userRoutes);
 app.use("/api/sauces", saucesRoutes);
+app.use(helmet());
 
 module.exports = app;
