@@ -1,4 +1,6 @@
+// Importation du package Express
 const express = require("express");
+// Pour la gestion des images
 const path = require("path");
 const mongoose = require("mongoose");
 const helmet = require("helmet");
@@ -12,6 +14,7 @@ const userRoutes = require("./routes/user");
 const saucesRoutes = require("./routes/sauces");
 
 mongoose
+// connexion à MongoDB
   .connect(
     "mongodb+srv://Hugopinpio:Ub9zKP0DY8YKD1fa@cluster0.byahfys.mongodb.net/?retryWrites=true&w=majority",
     { useNewUrlParser: true, useUnifiedTopology: true }
@@ -36,6 +39,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Gestion des routes principales
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/api/auth", userRoutes);
 app.use("/api/sauces", saucesRoutes);

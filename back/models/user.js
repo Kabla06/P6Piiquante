@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+// Unique validator pour 1 seule adresse mail
 const uniqueValidator = require("mongoose-unique-validator");
 
 const userSchema = mongoose.Schema({
