@@ -9,6 +9,7 @@ const fs = require("fs");
 // Ici, pas de 201 mais un 200 car il ne s'agit pas de la création d'un objet mais de la "lecture" de la BDD
 exports.getSauces = (req, res, next) => {
   Sauce.find()
+  // 200 signifie que la requête a bien été effectuée
     .then((things) => res.status(200).json(things))
     .catch((error) => res.status(400).json({ error }));
 };
@@ -16,6 +17,7 @@ exports.getSauces = (req, res, next) => {
 exports.getOneSauce = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id })
     .then((things) => res.status(200).json(things))
+    // 404 signifie que le serveur n'a pas trouvé la ressource demandée
     .catch((error) => res.status(404).json({ error }));
 };
 
@@ -52,6 +54,7 @@ exports.updateOne = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id })
     .then((sauce) => {
       if (sauce.userId != req.auth.userId) {
+        // 403 pour interdiction d'effectuer la requête car dans ce cas, l'utilisateur n'est pas le bon
         res.status(403).json({ message: "unauthorized request." });
       }
       // si req.file != null alors on a passé une nouvelle image

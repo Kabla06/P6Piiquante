@@ -9,7 +9,8 @@
 # Node
 back/node_modules
 front/node_modules
-back/.env
+# back/.env
+# à remettre en hidden
 npm-debug.log
 yarn-error.log
 
@@ -43,4 +44,5 @@ testem.log
 .DS_Store
 Thumbs.db
 images/**
+images
 front
