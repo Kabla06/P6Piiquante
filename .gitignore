@@ -9,8 +9,7 @@
 # Node
 back/node_modules
 front/node_modules
-# back/.env
-# à remettre en hidden
+back/.env
 npm-debug.log
 yarn-error.log
 
