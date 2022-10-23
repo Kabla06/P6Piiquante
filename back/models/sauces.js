@@ -53,9 +53,6 @@ const sauceSchema = mongoose.Schema({
     required: true,
     default: [],
   },
-  // mettre un champ bidon pour faire planter
 });
 
-// sauceSchema.pre
-// Exporting Sauce Schema
 module.exports = mongoose.model("sauces", sauceSchema);

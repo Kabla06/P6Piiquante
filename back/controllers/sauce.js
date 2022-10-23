@@ -73,7 +73,6 @@ exports.updateOne = (req, res, next) => {
         };
         console.log(sauceObject);
       } else {
-        console.log("coucou :)");
         console.log(req.body);
         // si on arrive là, on n'a pas passé d'image dans la MaJ
         sauceObject = req.body;

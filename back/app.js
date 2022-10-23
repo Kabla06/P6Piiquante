@@ -4,6 +4,7 @@ const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
 const helmet = require("helmet");
+const morgan = require("morgan");
 const app = express();
 
 app.use(express.json()); //body-parser = permet d'accéder au corps des requêtes
@@ -12,15 +13,12 @@ app.use(express.urlencoded({ extended: true }));
 const userRoutes = require("./routes/user");
 const saucesRoutes = require("./routes/sauces");
 
-// Ajout de dotenv pour sécuriser le token et la conenxion à la base de données
+// Ajout de dotenv pour sécuriser le token et la connexion à la base de données
 require("dotenv").config();
-// console.log(process.env)
 
 mongoose
   // connexion à MongoDB avec mon .env, pas en visible
-  .connect(
-    process.env.DB_CO, 
-    {
+  .connect(process.env.DB_CO, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -33,6 +31,7 @@ app.use((req, res, next) => {
   console.log(req.body);
   // comm front to back => api contactable par n'importe quel domaine
   res.setHeader("Access-Control-Allow-Origin", "*");
+  // autorise l'utilisation des headers suivants => 
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization"
@@ -48,6 +47,14 @@ app.use(
   helmet({
     crossOriginResourcePolicy: {
       policy: "same-site",
+    },
+  })
+);
+
+app.use(
+  morgan("dev", {
+    skip: function (req, res) {
+      return res.statusCode < 400;
     },
   })
 );
