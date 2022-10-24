@@ -9,7 +9,7 @@
 # Node
 back/node_modules
 front/node_modules
-back/.env
+.env
 npm-debug.log
 yarn-error.log
 
